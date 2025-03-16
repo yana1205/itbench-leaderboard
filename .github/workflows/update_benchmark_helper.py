@@ -43,6 +43,7 @@ class BenchmarkStatus:
 class BenchmarkStatusComment:
     number: int
     comment: str
+    closed: bool
     status_comment_id: Optional[str] = None
 
 
@@ -176,7 +177,13 @@ class CommentCommand:
                 comment = self.to_error_comment(benchmark_status)
             else:
                 comment = self.to_comment(benchmark_status)
-            bsc = BenchmarkStatusComment(number=benchmark_status.number, status_comment_id=benchmark_status.status_comment_id, comment=comment)
+            closed = benchmark_status.status in ["Finished", "Errored"]
+            bsc = BenchmarkStatusComment(
+                number=benchmark_status.number,
+                status_comment_id=benchmark_status.status_comment_id,
+                comment=comment,
+                closed=closed,
+            )
             benchmark_status_comments.append(bsc)
 
         data = "\n".join([json.dumps(asdict(x)) for x in benchmark_status_comments])

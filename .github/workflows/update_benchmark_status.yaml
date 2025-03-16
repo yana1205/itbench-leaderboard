@@ -68,6 +68,7 @@ jobs:
               fi
 
               status_comment_id=$(printf "%s" "$line" | jq -r '.status_comment_id')
+              closed=$(printf "%s" "$line" | jq -r '.closed')
               body=$(printf "%s" "$line" | jq -r '.comment')
 
               if [[ "$status_comment_id" == "null" ]]; then
@@ -77,4 +78,10 @@ jobs:
                   echo "  Editing comment $status_comment_id for issue #$number"
                   gh api --silent -X PATCH /repos/${GH_REPO}/issues/comments/${status_comment_id} -F "body=${body}"
               fi
+
+              if [[ "$closed" == "true" ]]; then
+                  echo "  Close the issue #$number"
+                  gh issue close $number
+              fi
           done
+

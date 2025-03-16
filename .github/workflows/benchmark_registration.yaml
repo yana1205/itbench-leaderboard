@@ -149,8 +149,8 @@ jobs:
 
             if [[ $? -eq 0 ]]; then
 
-              echo "benchmark_id=$(echo $reg_resp | jq '.id')" >> "$GITHUB_OUTPUT"
-              echo "benchmark_name=$(echo $reg_resp | jq '.name')" >> "$GITHUB_OUTPUT"
+              echo "benchmark_id=$(echo $reg_resp | jq -r '.id')" >> "$GITHUB_OUTPUT"
+              echo "benchmark_name=$(echo $reg_resp | jq -r '.name')" >> "$GITHUB_OUTPUT"
 
              
              
@@ -191,13 +191,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: process.env.COMMENT_BODY
-            })
-
-            github.rest.issues.update({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'closed'
             })
 
 
