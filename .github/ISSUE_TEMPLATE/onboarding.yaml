@@ -13,7 +13,7 @@ body:
 
         Before you submit this form, you need to have completed the following tasks:
         1. Create an empty repository in GitHub with visibility set to private
-        2. Install the [ibm-itbench](https://github.com/apps/ibm-itbench) app into that repository.
+        2. Install the [ibm-itbench](https://github.com/apps/ibm-itbench-20250310) app into that repository.
 
         Once those two steps have been completed, please complete this form and provide the URL for the
         repository you created in the relevant section.
