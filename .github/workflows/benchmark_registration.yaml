@@ -144,13 +144,13 @@ jobs:
             echo "Request was successful"
 
             # Check that the spec is in the response body
-            echo $reg_resp | jq -e '.benchmark_id?'
+            echo $reg_resp | jq -e '.id?'
    
 
             if [[ $? -eq 0 ]]; then
 
-              echo "benchmark_id=$(echo $reg_resp | jq '.benchmark_id')" >> "$GITHUB_OUTPUT""
-              echo "benchmark_name=$(echo $reg_resp | jq '.name')" >> "$GITHUB_OUTPUT""
+              echo "benchmark_id=$(echo $reg_resp | jq '.id')" >> "$GITHUB_OUTPUT"
+              echo "benchmark_name=$(echo $reg_resp | jq '.name')" >> "$GITHUB_OUTPUT"
 
              
              
@@ -181,6 +181,7 @@ jobs:
             Name:  ${{ steps.register-benchmark.outputs.benchmark_name }}
             Type:  ${{ steps.register-benchmark.outputs.benchmark_id }}
            
+            <!--hidden-benchmark-id>${{ steps.register-benchmark.outputs.benchmark_id }}</hidden-benchmark-id-->
 
         
         with:

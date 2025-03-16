@@ -18,7 +18,8 @@ jobs:
         run: |
           echo "Requesting Leaderboard data from API"
 
-          python ./.github/workflows/leaderboard.py global >> leaderboard_raw.md
+          # python ./.github/workflows/leaderboard.py global >> leaderboard_raw.md
+          python ./.github/workflows/leaderboard.py local --github_username yana1205 >> leaderboard_raw.md
          
       - name: generate-readme
         id: generate-readme

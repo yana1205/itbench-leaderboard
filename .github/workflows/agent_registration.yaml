@@ -133,8 +133,7 @@ jobs:
           
             if [[ $? -eq 0 ]]; then
 
-
-              echo "manifest=$( echo $reg_resp | base64 -w 0)" >> "$GITHUB_OUTPUT"
+              echo "manifest=$( echo $reg_resp | jq '.spec.agent_manifest + {metadata: {id: .metadata.id}}' | base64 -w 0)" >> "$GITHUB_OUTPUT"
              
             else
               echo "Body recieved from IT bench was invalid."
