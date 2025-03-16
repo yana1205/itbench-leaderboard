@@ -9,7 +9,7 @@ jobs:
     if: github.event.label.name == 'approved' && contains(github.event.issue.labels.*.name, 'registration')
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    # environment: onboarding
+    environment: onboarding
     name: Registers an Agent
     steps:
       - name: Parse issue

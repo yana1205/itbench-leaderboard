@@ -8,6 +8,8 @@ on:
 jobs:
   update_status:
     runs-on: ubuntu-latest
+    environment: onboarding
+    name: Update the Benchmark Progress
     steps:
       - name: Determine Trigger Type
         id: check_trigger
