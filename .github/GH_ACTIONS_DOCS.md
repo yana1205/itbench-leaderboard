@@ -103,6 +103,7 @@ flowchart TD
     - `error`
     - `registering`
     - `registration`
+    - `track-progress`
 
 
 ### Self hosted runners
