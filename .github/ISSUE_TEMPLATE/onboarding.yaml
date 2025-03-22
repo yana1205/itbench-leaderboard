@@ -60,6 +60,8 @@ body:
         - label: Kubernetes in OPA
         - label: Kubernetes in Kyverno Update
         - label: RHEL9 in OPA
+        - label: Configuration Setting
+        - label: Resource Unavailable
   - type: input
     id: repo_url
     attributes:
