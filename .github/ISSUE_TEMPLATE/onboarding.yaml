@@ -1,12 +1,12 @@
 name: IT Bench Agent Registration
-description: Register your IT Bench Agent for benchmarking
-title: "[Registration]: < agent name here >"
+description: Register your CISO ITBench agent for benchmarking
+title: "[Registration - CISO]: < agent name here >"
 labels: ["registration"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for your interest in benchmarking an IT Bench Agent. 
+        Thank you for your interest in benchmarking a CISO ITBench Agent.
         Please fill out this form to request connection details for the IT Bench service.
 
         ## Important!
@@ -31,9 +31,7 @@ body:
       label: Agent Type
       description: What type of agent is this?
       options:
-        - SRE
         - CISO
-        - FinOps
       default: 0
     validations:
       required: true
@@ -52,7 +50,7 @@ body:
   - type: checkboxes
     id: scenario-categories
     attributes:
-      label: Agent Scenarios
+      label: CISO Agent Scenarios
       description: You may select more than one, options not applicable to the agent type will be ignored.
       options:
         - label: resource unavailability
@@ -60,8 +58,6 @@ body:
         - label: Kubernetes in OPA
         - label: Kubernetes in Kyverno Update
         - label: RHEL9 in OPA
-        - label: Configuration Setting
-        - label: Resource Unavailable
   - type: input
     id: repo_url
     attributes:

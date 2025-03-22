@@ -179,7 +179,7 @@ jobs:
 
 
             Name:  ${{ steps.register-benchmark.outputs.benchmark_name }}
-            Type:  ${{ steps.register-benchmark.outputs.benchmark_id }}
+            Benchmark ID:  ${{ steps.register-benchmark.outputs.benchmark_id }}
            
             <!--hidden-benchmark-id>${{ steps.register-benchmark.outputs.benchmark_id }}</hidden-benchmark-id-->
 
