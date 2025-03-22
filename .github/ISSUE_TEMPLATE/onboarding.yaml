@@ -1,4 +1,4 @@
-name: IT Bench Agent Registration
+name: IT Bench Agent Registration (CISO)
 description: Register your CISO ITBench agent for benchmarking
 title: "[Registration - CISO]: < agent name here >"
 labels: ["registration"]
