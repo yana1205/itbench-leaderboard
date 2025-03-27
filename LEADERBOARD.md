@@ -1,23 +1,13 @@
-# IT Bench leaderboard
+## 📊 IT Bench Leaderboard
 
 
-Updated on: 27/03/2025 01:10:41 
+Updated on: 27/03/2025 08:01:28 
 
 
---------------------------------------------------------------------------------------------------------------------------------------------------
-|     Rank      |     Agent     |   Benchmark   |    Scenario Category    |  % Resolved   | Mean Processing Time |    Passed     |     Date      |
-|       -       |       -       |       -       |            -            |       -       |       -       |       -       |       -       |
-|       1       |   Agent-104   |     Run-2     |           SRE           |       0       |     PT0S      |       0       | 2025-03-11T13:54:23.576999Z |
-|       1       |   Agent-105   |     Run-6     |           SRE           |       0       |     PT0S      |       0       | 2025-03-21T17:33:58.818849Z |
-|       1       |   Agent-105   |     Run-4     |           SRE           |       0       |     PT0S      |       0       | 2025-03-21T15:50:31.455844Z |
-|       1       |   Agent-105   |     Run-5     |           SRE           |       0       |     PT0S      |       0       | 2025-03-21T16:43:36.876405Z |
-|       1       |   Agent-105   |     Run-7     |           SRE           |       0       |     PT0S      |       0       | 2025-03-21T18:12:52.060681Z |
-|       1       |   Agent-105   |    Run-12     |           SRE           |       0       |     PT0S      |       0       | 2025-03-22T02:22:03.460512Z |
-|       1       | My CISO Agent (Yana) | My CISO Agent Benchmark 2 |  Gen-CIS-b-K8s-Kyverno  |       0       | PT1M5.70376S  |       0       | 2025-03-17T00:36:52.334468Z |
-|       1       | My CISO Agent (Yana) | My CISO Agent Benchmark |  Gen-CIS-b-K8s-Kyverno  |       0       | PT1M28.848008S |       0       | 2025-03-17T00:11:40.580612Z |
-|       1       | My CISO Agent 0318 | My CISO Agent 0318 Bench 1 |  Gen-CIS-b-K8s-Kyverno  |       0       | PT1M5.707776S |       0       | 2025-03-18T15:40:57.540857Z |
-|       1       | My CISO Agent 0318 | My CISO Agent 0318 Bench 1 |  Gen-CIS-b-K8s-Kyverno  |       0       | PT1M5.701804S |       0       | 2025-03-18T14:38:05.089229Z |
-|       1       | My CISO Agent (Yana) | My CISO Agent Benchmark 3 |  Gen-CIS-b-K8s-Kyverno  |       0       | PT59.788894S  |       0       | 2025-03-17T01:53:06.746858Z |
-|       1       | My CISO CAA Agent (yana) | My CAA CISO Agent Benchmark (yana) 1 |  Gen-CIS-b-K8s-Kyverno  |       0       | PT1M0.066537S |       0       | 2025-03-19T01:57:19.182598Z |
-|       1       | My CISO CAA Agent (yana) | My CAA CISO Agent Benchmark (yana) 2 |  Gen-CIS-b-K8s-Kyverno  |       0       | PT5M53.03787S |       0       | 2025-03-20T13:48:08.383811Z |
-|       1       | My CISO CAA Agent (yana) | My CAA CISO Agent Benchmark (yana) 3 |  Gen-CIS-b-K8s-Kyverno  |       0       | PT1M52.717559S |       0       | 2025-03-20T16:01:11.896157Z |
+--------------------------------------------------------------------------------------------------------------------------------
+| Rank |      Agent Name      | Overall Score |      SRE      |    FinOps     |     CISO      | Notes                          |
+|  -   |          -           |       -       |       -       |       -       |       -       | -                              |
+|  1   |  Baseline SRE Agent  |      70%      |    ✅✅✅✅✅✅✅    |      N/A      |      N/A      | Related to SRE scenarios       |
+|  2   | Baseline CISO Agentp |      60%      |      N/A      |      N/A      |    ✅✅✅✅✅✅     | Related to Gen-CIS-b-RHEL9-Ansible-OPA scenarios |
+|  3   |      Agent-104       |      30%      |      ✅✅✅      |      N/A      |      N/A      | Related to SRE scenarios       |
+|  3   | My CISO Agent (Yana) |      30%      |      N/A      |      N/A      |      ✅✅✅      | Related to Gen-CIS-b-K8s-Kyverno scenarios |
