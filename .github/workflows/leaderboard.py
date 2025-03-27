@@ -50,21 +50,78 @@ def print_table(data):
         print(line_fmt.format(*bench_line))
 
 
+SAMPLE_DATA = [
+    {
+        'name': 'Run-2',
+        'incident_type': 'SRE',
+        'agent': 'Agent-104',
+        'results': [{}] * 10,
+        'mttr': 'PT0S',
+        'num_of_passed': 3,
+        'score': 0.3,
+        'date': '2025-03-11T13:54:23.576999Z',
+        'id': 'f324b0ca-5065-435e-a140-1db3f409926d',
+        'agent_type': 'SRE',
+        'github_username': 'Rohan-Arora',
+    },
+    {
+        'name': 'My CISO Agent Benchmark',
+        'incident_type': 'Gen-CIS-b-K8s-Kyverno',
+        'agent': 'My CISO Agent (Yana)',
+        'results': [{}] * 10,
+        'mttr': 'PT1M5.70376S',
+        'num_of_passed': 3,
+        'score': 0.3,
+        'date': '2025-03-17T00:36:52.334468Z',
+        'id': '337e85bf-f29d-4b60-b159-6f66c9d6febe',
+        'agent_type': 'CISO',
+        'github_username': 'yana1205',
+    },
+    {
+        'name': 'Top SRE Benchmark',
+        'incident_type': 'SRE',
+        'agent': 'Baseline SRE Agent',
+        'results': [{}] * 10,
+        'mttr': 'PT30S',
+        'num_of_passed': 7,
+        'score': 0.70,
+        'date': '2025-03-20T12:00:00Z',
+        'id': 'aaa-bbb',
+        'agent_type': 'SRE',
+        'github_username': 'sre_star',
+    },
+    {
+        'name': 'Top CISO Benchmark',
+        'incident_type': 'Gen-CIS-b-RHEL9-Ansible-OPA',
+        'agent': 'Baseline CISO Agentp',
+        'results': [{}] * 10,
+        'mttr': 'PT1M',
+        'num_of_passed': 6,
+        'score': 0.6,
+        'date': '2025-03-20T12:10:00Z',
+        'id': 'ccc-ddd',
+        'agent_type': 'CISO',
+        'github_username': 'ciso_champ',
+    }
+]
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Print IT Bench leaderboard")
     parser.add_argument("leaderboard")
     parser.add_argument("-u", "--github_username", type=str)
     parser.add_argument("-b", "--benchmark_id", type=str)
+    parser.add_argument("--sample", action="store_true", help="Use sample data")
     args = parser.parse_args()
-    if args.leaderboard =="global":
-        leaderboard = leaderboard = get_leaderboard()
+    if args.sample:
+        leaderboard = SAMPLE_DATA
     else:
-        leaderboard = get_leaderboard(args.benchmark_id, args.github_username)
+        if args.leaderboard =="global":
+            leaderboard = get_leaderboard()
+        else:
+            leaderboard = get_leaderboard(args.benchmark_id, args.github_username)
    
     bench_summary = []
-    [x.update({'pass_rate': int((x["num_of_passed"] / len(x["results"]))*100)}) for x in leaderboard]
-    sorted(leaderboard, key=lambda x: x['pass_rate'])
+    leaderboard = sorted(leaderboard, key=lambda x: x['score'], reverse=True)
     
     prev_score = None
     rank = 0
@@ -72,12 +129,12 @@ if __name__ == "__main__":
     for benchmark in leaderboard:
         #print(benchmark)
         count += 1
-        if benchmark["pass_rate"] != prev_score:
+        if benchmark["score"] != prev_score:
             rank = count
         name = benchmark["agent"]
-        score = f'{int(benchmark["pass_rate"] * 100)}%'
+        score = f'{int(benchmark["score"] * 100)}%'
         agent_type = benchmark["agent_type"]
-        checkmarks = "✅" * benchmark["num_of_passed"] if benchmark["num_of_passed"] > 0 else "N/A"
+        checkmarks = "✅" * benchmark["num_of_passed"] if benchmark["num_of_passed"] >= 0 else "N/A"
         notes = f'Related to {benchmark["incident_type"]} scenarios'
 
         sre = finops = ciso = "N/A"
@@ -96,8 +153,7 @@ if __name__ == "__main__":
             ciso,
             notes,
         ]
-
-        prev_score = benchmark["pass_rate"]
+        prev_score = benchmark["score"]
         bench_summary.append(bench_line)
 
 
