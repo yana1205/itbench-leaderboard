@@ -1,9 +1,9 @@
+#import ssl
+import argparse
 import json
 import os
 import urllib.request
 from urllib.parse import urlencode
-#import ssl
-import argparse
 
 ITBENCH_API = os.getenv("ITBENCH_API")
 ITBENCH_API_TOKEN = os.getenv("ITBENCH_API_TOKEN")
@@ -39,8 +39,8 @@ def get_leaderboard(benchmark_id: str = None, github_username: str = None):
 
 
 def print_table(data):
-    header_str = ['Rank', 'Agent', 'Benchmark', 'Scenario Category', '% Resolved', 'Mean Processing Time', 'Passed', 'Date']
-    line_fmt = '| {:^13} | {:^13} | {:^13} | {:^23} | {:^13} | {:^13} | {:^13} | {:^13} |'
+    header_str = ['Rank', 'Agent Name', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Notes']
+    line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
     headers = line_fmt.format(*header_str)
     header_len = len(headers)
     print('-' * header_len)
@@ -72,20 +72,32 @@ if __name__ == "__main__":
     for benchmark in leaderboard:
         #print(benchmark)
         count += 1
-        if benchmark['pass_rate'] != prev_score:
+        if benchmark["pass_rate"] != prev_score:
             rank = count
-        prev_score = benchmark['pass_rate']
+        name = benchmark["agent"]
+        score = f'{int(benchmark["pass_rate"] * 100)}%'
+        agent_type = benchmark["agent_type"]
+        checkmarks = "✅" * benchmark["num_of_passed"] if benchmark["num_of_passed"] > 0 else "N/A"
+        notes = f'Related to {benchmark["incident_type"]} scenarios'
+
+        sre = finops = ciso = "N/A"
+        if agent_type == "SRE":
+            sre = checkmarks
+        elif agent_type == "FinOps":
+            finops = checkmarks
+        elif agent_type == "CISO":
+            ciso = checkmarks
         bench_line = [
             rank,
-            benchmark["agent"],
-            benchmark["name"],
-            benchmark["incident_type"],
-            benchmark['pass_rate'],
-            benchmark["mttr"],
-            benchmark["num_of_passed"],
-            benchmark["date"]
+            name,
+            score,
+            sre,
+            finops,
+            ciso,
+            notes,
         ]
 
+        prev_score = benchmark["pass_rate"]
         bench_summary.append(bench_line)
 
 
