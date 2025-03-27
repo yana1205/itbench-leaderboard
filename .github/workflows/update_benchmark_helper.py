@@ -33,6 +33,7 @@ class BenchmarkStatus:
     number: int
     github_username: str
     benchmark_id: str
+    agent_type: str
     status: str
     error_message: Optional[str] = None
     results: List[Dict[str, Any]] = field(default_factory=list)
@@ -130,10 +131,12 @@ class StatusCommand:
                 continue
             bench_result = bench_results[0]  # benchmark_id is specified in query param so the response should contain only 1 item.
             benchmark = bench_result.get("benchmark", {})
+            spec = benchmark.get("spec", {})
+            agent_type = spec.get("agent_type", None)
             status = benchmark.get("status", {})
             phase = status.get("phase", "Errored")
             results = bench_result.get("results", {})
-            bs = self.to_benchmark_status(upd, status=phase, status_comment_id=status_comment_id, results=results)
+            bs = self.to_benchmark_status(upd, agent_type=agent_type, status=phase, status_comment_id=status_comment_id, results=results)
             benchmark_statuses.append(bs)
 
         data = json.dumps([asdict(x) for x in benchmark_statuses], indent=2)
@@ -151,12 +154,13 @@ class StatusCommand:
         return res_dict, False
 
     def to_benchmark_status(
-        self, upd: UpdatedIssue, status: str, status_comment_id, error_message: Optional[str] = None, results: List[Dict[str, Any]] = []
+        self, upd: UpdatedIssue, agent_type: str, status: str, status_comment_id, error_message: Optional[str] = None, results: List[Dict[str, Any]] = []
     ):
         return BenchmarkStatus(
             number=upd.number,
             github_username=upd.github_username,
             benchmark_id=upd.benchmark_id,
+            agent_type=agent_type,
             error_message=error_message,
             status=status,
             status_comment_id=status_comment_id,
@@ -191,7 +195,12 @@ class CommentCommand:
         output(args, data)
 
     def to_comment(self, benchmark_status: BenchmarkStatus):
-        table = self.to_table(benchmark_status)
+        if benchmark_status.agent_type == "CISO":
+            table = self.to_table(benchmark_status)
+        elif benchmark_status.agent_type == "SRE":
+            table = "TBD"
+        else:
+            table = "TBD"
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         return f"""\
 ### Status
