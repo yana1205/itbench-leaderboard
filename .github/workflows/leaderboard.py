@@ -39,8 +39,8 @@ def get_leaderboard(benchmark_id: str = None, github_username: str = None):
 
 
 def print_table(data):
-    header_str = ['Agent', 'Benchmark', 'Scenario Category', '% Resolved', 'Mean Processing Time', 'Passed', 'Date']
-    line_fmt = '| {:^13} | {:^13} | {:^23} | {:^13} | {:^13} | {:^13} | {:^13} |'
+    header_str = ['Rank', 'Agent', 'Benchmark', 'Scenario Category', '% Resolved', 'Mean Processing Time', 'Passed', 'Date']
+    line_fmt = '| {:^13} | {:^13} | {:^13} | {:^23} | {:^13} | {:^13} | {:^13} | {:^13} |'
     headers = line_fmt.format(*header_str)
     header_len = len(headers)
     print('-' * header_len)
@@ -63,13 +63,24 @@ if __name__ == "__main__":
         leaderboard = get_leaderboard(args.benchmark_id, args.github_username)
    
     bench_summary = []
+    [x.update({'pass_rate': int((x["num_of_passed"] / len(x["results"]))*100)}) for x in leaderboard]
+    sorted(leaderboard, key=lambda x: x['pass_rate'])
+    
+    prev_score = None
+    rank = 0
+    count = 0
     for benchmark in leaderboard:
         #print(benchmark)
+        count += 1
+        if benchmark['pass_rate'] != prev_score:
+            rank = count
+        prev_score = benchmark['pass_rate']
         bench_line = [
+            rank,
             benchmark["agent"],
             benchmark["name"],
             benchmark["incident_type"],
-            int((benchmark["num_of_passed"] / len(benchmark["results"]))*100),
+            benchmark['pass_rate'],
             benchmark["mttr"],
             benchmark["num_of_passed"],
             benchmark["date"]
