@@ -42,7 +42,7 @@ jobs:
 
           dt=$(date '+%d/%m/%Y %H:%M:%S');
 
-          echo "# IT Bench leaderboard" > LEADERBOARD.md
+          echo "## 📊 IT Bench Leaderboard" > LEADERBOARD.md
           echo -e "\n\nUpdated on: $dt \n\n" >> LEADERBOARD.md
           cat leaderboard_raw.md >> LEADERBOARD.md
           rm leaderboard_raw.md
