@@ -114,6 +114,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.sample:
         leaderboard = SAMPLE_DATA
+        leaderboard_real = get_leaderboard(args.benchmark_id, args.github_username)
+        leaderboard = leaderboard + leaderboard_real
     else:
         if args.leaderboard =="global":
             leaderboard = get_leaderboard()
