@@ -53,7 +53,6 @@ body:
       label: Agent Scenarios
       description: You may select more than one, options not applicable to the agent type will be ignored.
       options:
-        - label: resource unavailability
         - label: Kubernetes in Kyverno
         - label: Kubernetes in OPA
         - label: Kubernetes in Kyverno Update
