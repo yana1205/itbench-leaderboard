@@ -6,6 +6,14 @@ on:
         type: boolean
         required: false
         description: If set, display leaderboard with sample data
+      benchmark-id:
+        type: string
+        required: false
+        description: If set, display leaderboard of the provided benchmark id
+      github-username:
+        type: string
+        required: false
+        description: If set, display leaderboard of the provided github username
 jobs:
   update_leaderboard:
     runs-on: ubuntu-latest
@@ -20,11 +28,13 @@ jobs:
           ITBENCH_API: ${{vars.ITBENCH_API}}
           ITBENCH_API_TOKEN: ${{ secrets.ITBENCH_API_TOKEN }}
           USE_SAMPLE: ${{ github.event.inputs.use-sample }}
+          BENCHMARK_ID: ${{ github.event.inputs.benchmark-id }}
+          GITHUB_USERNAME: ${{ github.event.inputs.github-username }}
         run: |
           echo "Requesting Leaderboard data from API"
 
           if [ "$USE_SAMPLE" == "true" ]; then
-            python ./.github/workflows/leaderboard.py global --sample >> leaderboard_raw.md
+            python ./.github/workflows/leaderboard.py global --sample -b $BENCHMARK_ID -u $GITHUB_USERNAME >> leaderboard_raw.md
           else
             python ./.github/workflows/leaderboard.py global >> leaderboard_raw.md
           fi
@@ -42,7 +52,7 @@ jobs:
 
           dt=$(date '+%d/%m/%Y %H:%M:%S');
 
-          echo "# IT Bench leaderboard" > LEADERBOARD.md
+          echo "## 📊 IT Bench Leaderboard" > LEADERBOARD.md
           echo -e "\n\nUpdated on: $dt \n\n" >> LEADERBOARD.md
           cat leaderboard_raw.md >> LEADERBOARD.md
           rm leaderboard_raw.md
