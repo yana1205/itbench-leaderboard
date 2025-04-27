@@ -12,12 +12,14 @@ jobs:
     environment: onboarding
     name: Registers an Agent
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
       - name: Parse issue
         id: parse
-        uses: onmax/issue-form-parser@v1.6
-        with:
-          issue_number: ${{ github.event.issue.number }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${{ github.event.issue.body }}" > issue_body.txt
+          python ./.github/workflows/parse_issue.py < issue_body.txt > parsed_output.json
+          echo "payload=$(cat parsed_output.json)" >> $GITHUB_OUTPUT
       # Examples on how to use the output
       - name: Show parsed payload data and store variables
         id: extract-parsed-data
@@ -133,6 +135,7 @@ jobs:
           
             echo "Curl execution was successful"
 
+            echo "::debug:: $(cat $response_file)"
             # Check that the spec is in the response body
           
             if [[ "$status_code" == "200" || "$status_code" == "201" ]]; then
