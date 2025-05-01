@@ -100,6 +100,17 @@ def build_overall_table(leaderboard):
 
     texts = []
     texts.append("## 📊 IT Bench Leaderboard")
+    header = """\
+This table shows a consolidated view of all agent submissions across different domains (SRE, FinOps, CISO).
+
+For details on how to participate, see the [README](../README.md).
+
+**Column Descriptions:**
+- *Overall Score*: Combined performance across available domains
+- *SRE / FinOps / CISO*: ✅ if benchmarks in that domain were completed
+- *Notes*: Additional context on the evaluated scenarios
+"""
+    texts.append(header)
     texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
     texts.append("-" * header_len)
     texts.append(headers)
@@ -129,6 +140,17 @@ def build_ciso_table(leaderboard) -> str:
 
     texts = []
     texts.append("## 📊 IT Bench Leaderboard (CISO)")
+    header = """\
+This leaderboard shows the performance of agents on CISO-related IT automation scenarios.  
+For details on how to participate or interpret results, see the [README](../main/README.md).
+
+**Column Descriptions:**
+- *Score*: Average benchmark score across scenarios (1.0 = perfect)
+- *Number of passed*: Number of scenarios successfully passed
+- *Mean Processing Time (sec)*: Average time taken across scenarios
+- *Scenario Category*: Categories of evaluated tasks (e.g., RHEL, Kyverno, etc.)
+"""
+    texts.append(header)
     texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
     texts.append("| " + " | ".join(headers) + " |")
     texts.append("|" + "|".join(["-" * (len(h) + 2) for h in headers]) + "|")

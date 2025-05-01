@@ -6,17 +6,26 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for your interest in benchmarking a CISO ITBench Agent.
+        Thank you for your interest in benchmarking a CISO ITBench Agent. 
         Please fill out this form to request connection details for the IT Bench service.
 
         ## Important!
 
-        Before you submit this form, you need to have completed the following tasks:
-        1. Create an empty repository in GitHub with visibility set to private
-        2. Install the [ibm-itbench](https://github.com/apps/ibm-itbench-github-app) app into that repository.
+        Before you submit this form, you need to have completed the following tasks
+        (See also [Getting Started](../itbench-leaderboard?tab=readme-ov-file#prerequisites)):
 
+          1. Create an empty repository in GitHub with visibility set to private
+          2. Install the [ibm-itbench](https://github.com/apps/ibm-itbench-github-app) app into that repository.
+  
         Once those two steps have been completed, please complete this form and provide the URL for the
         repository you created in the relevant section.
+
+        ### Reference
+
+        You can find examples of expected agent actions and outputs in the sample scenario repository:
+        https://github.com/IBM/ITBench-Scenarios/blob/main/ciso/README.md#scenarios
+        
+        ---
 
   - type: input
     id: agent-name

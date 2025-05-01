@@ -1,98 +1,13 @@
-# Instruction for Agent Submitter (CISO) 
+# How to Launch the Benchmark (CISO Agent)
 
-This guide provides step-by-step instructions for benchmarking your Agent using ITBench.
+This guide walks you through launching the ITBench benchmark for a CISO agent.  
+You will run two Docker containers—**Agent Harness** and **Bench Runner**—and keep them running during the evaluation.
 
-The workflow consists of three main stages:
-1. Register your Agent
-1. Register a Benchmark
-1. Launch the Benchmark
+> ⚠️ **Note:** You must not run multiple Agent Harnesses or Bench Runners at the same time.
 
-## Prerequisites
-Before you begin, ensure you have:
-- **A Private Git Repository**
-  - An Agent configuration file will be stored in this repository.
-  - Files may be created or deleted automatically during the benchmark lifecycle.
-- **A Kubernetes Sandbox Cluster (KinD recommended)**
-  - Do not use a production cluster as the benchmark process will create and delete resources dynamically.
-  - Please refer to [prepare-kubeconfig-kind.md](https://github.com/IBM/ITBench-Scenarios/blob/main/ciso/prepare-kubeconfig-kind.md)
-- **An Agent to benchmark**
-  - A fully prepared sample Agent is available from IBM for immediate use. This allows you to start benchmarking without additional setup effort.
-  - To use your own Agent, follow the [Bring Your Own Agent Guide](TBD) to prepare it beforehand.
+## Option 1: Use the CISO CAA Agent (Prebuilt)
 
-## Step 0: Install the ITBench GitHub App
-
-Install the ibm-itbench GitHub App in to the Agent configuration repo
-
-1. Go to the installation page [here](https://github.com/apps/ibm-itbench-github-app).
-
-    <img width="614" alt="go-to-github-app" src="https://github.com/user-attachments/assets/68d29f71-7128-4a40-9980-9de2d6c69710">
-1. Select your GitHub Organization
-
-    <img width="615" alt="select-org" src="https://github.com/user-attachments/assets/e81a28a2-3ab6-4581-af88-07b4565f36ac">
-1. Select your Agent configuration repo
-
-    <img width="388" alt="select-repo" src="https://github.com/user-attachments/assets/d033adfb-2185-41cf-9474-c45a27d6257d">
-
-## Step 1: Register Your Agent
-In this step, you will register your Agent information with ITBench. 
-
-1. Create a New Registration Issue
-    - Go to [Agent Registration Form](https://github.com/IBM/ITBench-Leaderboard/issues/new/choose) and create a new issue
-        ![agent-issue-selection](https://github.com/user-attachments/assets/0d8efe6d-9c32-47cc-9f4d-2d5f51c676d4)
-1. Fill in the issue template with the following information:
-    - Agent Name: "Your Agent Name"
-    - Agent Level: "Beginner"
-    - Agent Scenarios: "Kubernetes in Kyverno"
-    - Config Repo: "URL to your agent configuration repo"
-    (You may adjust the settings depending on the scenarios or agent level.)
-        <img width="494" alt="agent-registration-fill" src="https://github.com/user-attachments/assets/ed423608-f395-4071-9cfd-99fb490fbc4f">
-1. Submit the Issue
-  - Click "Create" to submit your registration request.
-  - Once your request is approved:
-      - An approved label will be attached to your issue.
-      - A comment will be added with a link to the generated Agent configuration file stored in the specified configuration repository.
-      - Download the linked configuration file to proceed.
-          
-          <img width="494" alt="agent-registration-done" src="https://github.com/user-attachments/assets/7940bba5-66f9-47ca-88f4-b6c8c6caea73">
-  - If you subscribe to the issue, you will also receive email notifications.
-      
-      <img width="494" alt="agent-registration-email" src="https://github.com/user-attachments/assets/7d14c523-6861-41a2-8f9a-dd4432767546">
-
-If there are any problems with your submission, we will respond directly on the issue.
-
-If you do not receive any response within a couple of days, please reach out to [Contact Support](#contact-support).
-
-## Step 2: Register Your Benchmark
-In this step, you will register your Benchmark entry.
-1. Create a New Benchmark Issue
-    - Go to [Benchmark Registration Form](https://github.com/IBM/itbench-leaderboard/issues) and create a new issue.
-
-        <img width="494" alt="image" src="https://github.com/user-attachments/assets/e2db4557-b675-4c36-9d01-2435ec6f4dfc">
-1. Fill in the issue template. 
-    - You may freely set any names for the benchmark except for the Config Repo, which must match the repository you used during Agent registration.
-
-        <img width="614" alt="image" src="https://github.com/user-attachments/assets/990d635a-e77e-4353-99cc-db898ac8bf25">
-1. Submit the Issue
-    - Click "Create" to submit your registration request. Once your request is approved:
-        - An approved label will be attached to your issue.
-        - The issue comment will be updated with your Benchmark ID.
-              
-            <img width="494" alt="image" src="https://github.com/user-attachments/assets/e7c5a27c-eba8-4dc6-9784-464a97f855ba">
-    - If you subscribe to the issue, you will also receive email notifications.
-          
-        <img width="494" alt="image" src="https://github.com/user-attachments/assets/003dc939-62a7-4389-9433-53d5e72ed2f3">
-
-If there are any problems with your submission, we will respond directly on the issue.
-
-If you do not receive any response within a couple of days, please reach out to [Contact Support](#contact-support).
-
-## Step 3: Launch Benchmark
-
-In this step, you will start two Docker containers (a pair of Agent Harness and Bench Runner) and keep them running for a couple of hours.
-**Note:** You cannot run multiple Agent Harnesses or multiple Bench Runners simultaneously.
-
-#### [1]. Run CISO CAA Agent Harness
-If you want to benchmark using the [CISO CAA Agent provided here](https://github.com/IBM/itbench-ciso-caa-agent):
+If you would like to benchmark using the [official CISO CAA Agent](https://github.com/IBM/itbench-ciso-caa-agent), follow these steps:
 
 1. Create a .env File
     Create a .env file with the following contents:
@@ -102,6 +17,7 @@ If you want to benchmark using the [CISO CAA Agent provided here](https://github
     CODE_GEN_MODEL = gpt-4o-mini
     ```
     If you want to use other models, refer to [this section](https://github.com/IBM/itbench-ciso-caa-agent?tab=readme-ov-file#3-create-env-file-and-set-llm-api-credentials)
+
 1. Run CISO Agent Harness Docker container
     Run the container, replacing `<ABSOLUTE_PATH/TO/AGENT_MANIFEST>` and `<ABSOLUTE_PATH/TO/ENVFILE>` replaced with your own paths:
     ```
@@ -113,6 +29,7 @@ If you want to benchmark using the [CISO CAA Agent provided here](https://github
         --benchmark_timeout 3600
     ```
     <img width="614" alt="image" src="https://github.com/user-attachments/assets/a41eaa4d-9770-4637-88ed-3c487893a2e1">
+
 1. Run the CISO DEF Runner Docker Container
     Open a new terminal window and run the container, replacing `<ABSOLUTE_PATH/TO/AGENT_MANIFEST>` and `<ABSOLUTE_PATH/TO/KUBECONFIG_FILE>` replaced with your own paths:
     ```
@@ -124,6 +41,7 @@ If you want to benchmark using the [CISO CAA Agent provided here](https://github
         --runner_id my-ciso-runner-1
     ```
     <img width="614" alt="image" src="https://github.com/user-attachments/assets/8dc70982-2219-4bd5-ae85-5845e07818cd">
+
 1. Benchmark Progress and Status Updates
     - The benchmark will proceed automatically after starting:
         - The benchmark will typically complete within about one hour, after which both Docker containers will exit automatically.
@@ -172,27 +90,10 @@ Table Fields:
     - If you do not see updates after a few days, please reach out to [Contact Support](#contact-support).
 
 
-#### [2]. Run Bring-Your-Own-Agent
-If you are using your own Agent, please refer to [Bring Your Own Agent Guide](#bring-your-own-agent) for detailed instructions.
+## Option 2: Use Your Own Agent
 
-## Conclusion
+If you are submitting your own custom agent, follow these steps:
 
-Congratulations! You have completed the ITBench benchmarking process.
-
-## Contact Support
-
-If you do not receive any response within a couple of days, please leave a comment in your original registration issue and mention our support team.
-    - Mention: @yana, @rohanarora
-    - Add Label: `need help`
-
-Example Comment:
-```
-@yana, @rohanarora
-Hi, I have not received a response regarding my registration request.
-Adding the "need help" label for visibility.
-```
-
-## Bring Your Own Agent
 1. Create Agent Harness config
     ```yaml
     # This field defines the path where the scenario's environment information is stored.
@@ -334,3 +235,20 @@ Adding the "need help" label for visibility.
 
     ENTRYPOINT ["/etc/entrypoint.sh"]
     ```
+
+## Conclusion
+
+Congratulations! You’ve successfully completed the ITBench benchmarking process.
+
+## Contact Support
+
+If you do not receive any response within a couple of days, please leave a comment in your original registration issue and mention our support team.
+    - Mention: @yana, @rohanarora
+    - Add Label: `need help`
+
+Example Comment:
+```
+@yana, @rohanarora
+Hi, I have not received a response regarding my registration request.
+Adding the "need help" label for visibility.
+```
