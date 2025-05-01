@@ -1,18 +1,17 @@
-#import ssl
 import argparse
 import json
 import os
+import re
 import urllib.request
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
+from typing import Optional
 
 ITBENCH_API = os.getenv("ITBENCH_API")
 ITBENCH_API_TOKEN = os.getenv("ITBENCH_API_TOKEN")
-#ITBENCH_CERT = os.getenv("ITBENCH_CERT")
 
 
 def get_leaderboard(benchmark_id: str = None, github_username: str = None):
-    # Required as the current IT Bench server is not using a trusted certificate
-    #ssl_context = ssl.create_default_context(cafile=ITBENCH_CERT)
     url = f"{ITBENCH_API}/gitops/aggregate-results"
     query_params = {}
     if benchmark_id is not None:
@@ -21,13 +20,10 @@ def get_leaderboard(benchmark_id: str = None, github_username: str = None):
         query_params["github_username"] = github_username
     if query_params:
         url += "?" + urlencode(query_params)
-    headers = {
-        "Authorization" : f"Bearer {ITBENCH_API_TOKEN}"
-    }
+    headers = {"Authorization": f"Bearer {ITBENCH_API_TOKEN}"}
     req = urllib.request.Request(url=url, headers=headers, method="GET")
-    #res = urllib.request.urlopen(req, timeout=10, context=ssl_context) # Use this if using internal server
     res = urllib.request.urlopen(req, timeout=10)
-    
+
     if res.getcode() != 200:
         print(f"Error requesting leaderboard JSON: {res.status_code}. {res.content}")
         exit(1)
@@ -37,17 +33,114 @@ def get_leaderboard(benchmark_id: str = None, github_username: str = None):
     return res_dict
 
 
+def parse_json_timedelta(delta):
+    if not delta:
+        return "N/A"
 
-def print_table(data):
+    match = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?", delta)
+    if not match:
+        return "Invalid"
+
+    hours = int(match.group(1)) if match.group(1) else 0
+    minutes = int(match.group(2)) if match.group(2) else 0
+    seconds = float(match.group(3)) if match.group(3) else 0.0
+    return str(int(timedelta(hours=hours, minutes=minutes, seconds=seconds).total_seconds())) + "s"
+
+
+def get_timestamp(dt: Optional[datetime] = None) -> str:
+    if not dt:
+        dt = datetime.now(timezone.utc)
+    return dt.strftime("%d/%m/%Y %H:%M:%S")
+
+def to_datetime(timestamp: str) -> datetime:
+    return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+
+def build_overall_table(leaderboard):
+    bench_summary = []
+    prev_score = None
+    rank = 0
+    count = 0
+    for benchmark in leaderboard:
+        count += 1
+        if benchmark["score"] != prev_score:
+            rank = count
+        name = benchmark["agent"]
+        score = f'{int(benchmark["score"] * 100)}%'
+        agent_type = benchmark["agent_type"]
+        checkmarks = "✅" * benchmark["num_of_passed"] if benchmark["num_of_passed"] >= 0 else "N/A"
+        notes = f'Related to {benchmark["incident_type"]} scenarios'
+
+        sre = finops = ciso = "N/A"
+        if agent_type == "SRE":
+            sre = checkmarks
+        elif agent_type == "FinOps":
+            finops = checkmarks
+        elif agent_type == "CISO":
+            ciso = checkmarks
+        bench_line = [
+            rank,
+            name,
+            score,
+            sre,
+            finops,
+            ciso,
+            notes,
+        ]
+        prev_score = benchmark["score"]
+        bench_summary.append(bench_line)
+
     header_str = ['Rank', 'Agent Name', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Notes']
     line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
     headers = line_fmt.format(*header_str)
     header_len = len(headers)
-    print('-' * header_len)
-    print(headers)
-    print(line_fmt.format(*("---" * 7)))
-    for bench_line in data:
-        print(line_fmt.format(*bench_line))
+
+    texts = []
+    texts.append("## 📊 IT Bench Leaderboard")
+    texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
+    texts.append("-" * header_len)
+    texts.append(headers)
+    texts.append(line_fmt.format(*("---" * 7)))
+    for bench_line in bench_summary:
+        texts.append(line_fmt.format(*bench_line))
+
+    return "\n".join(texts)
+
+
+def build_ciso_table(leaderboard) -> str:
+    column_mapping = {
+        "id": "Benchmark (ID)",
+        "name": "Name",
+        "name_decorated": "Benchmark (Name)",
+        "agent": "Agent (Name)",
+        "incident_type": "Scenario Category",
+        "score": "Score ⬆️",
+        "resolved": "% Resolved",
+        "mttr": "Mean Processing Time (sec)",
+        "num_of_passed": "Number of passed",
+        "date": "Date (UTC)",
+    }
+    columns = ["name", "agent", "incident_type", "score", "num_of_passed", "mttr", "date", "id"]
+    headers = [column_mapping[col] for col in columns]
+
+    texts = []
+    texts.append("## 📊 IT Bench Leaderboard (CISO)")
+    texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
+    texts.append("| " + " | ".join(headers) + " |")
+    texts.append("|" + "|".join(["-" * (len(h) + 2) for h in headers]) + "|")
+
+    for row in leaderboard:
+        values = []
+        for col in columns:
+            val = row.get(col, "")
+            if col == "mttr":
+                val = parse_json_timedelta(val)
+            elif col == "date":
+                val = get_timestamp(to_datetime(val))
+            elif isinstance(val, float):
+                val = f"{val:.2f}"
+            values.append(str(val))
+        texts.append("| " + " | ".join(values) + " |")
+    return "\n".join(texts)
 
 
 SAMPLE_DATA = [
@@ -102,61 +195,38 @@ SAMPLE_DATA = [
         'id': 'ccc-ddd',
         'agent_type': 'CISO',
         'github_username': 'ciso_champ',
-    }
+    },
 ]
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Print IT Bench leaderboard")
     parser.add_argument("leaderboard")
     parser.add_argument("-u", "--github_username", type=str)
     parser.add_argument("-b", "--benchmark_id", type=str)
+    parser.add_argument("--out-ciso", type=str, required=True)
+    parser.add_argument("--out-overall", type=str, required=True)
     parser.add_argument("--sample", action="store_true", help="Use sample data")
     args = parser.parse_args()
     if args.sample:
         leaderboard = SAMPLE_DATA
-        leaderboard_real = get_leaderboard(args.benchmark_id, args.github_username)
+        # leaderboard_real = get_leaderboard(args.benchmark_id, args.github_username)
+        leaderboard_real = []
         leaderboard = leaderboard + leaderboard_real
     else:
-        if args.leaderboard =="global":
+        if args.leaderboard == "global":
             leaderboard = get_leaderboard()
         else:
             leaderboard = get_leaderboard(args.benchmark_id, args.github_username)
-   
-    bench_summary = []
+
     leaderboard = sorted(leaderboard, key=lambda x: x['score'], reverse=True)
-    
-    prev_score = None
-    rank = 0
-    count = 0
-    for benchmark in leaderboard:
-        #print(benchmark)
-        count += 1
-        if benchmark["score"] != prev_score:
-            rank = count
-        name = benchmark["agent"]
-        score = f'{int(benchmark["score"] * 100)}%'
-        agent_type = benchmark["agent_type"]
-        checkmarks = "✅" * benchmark["num_of_passed"] if benchmark["num_of_passed"] >= 0 else "N/A"
-        notes = f'Related to {benchmark["incident_type"]} scenarios'
+    leaderboard_ciso = [x for x in leaderboard if x["agent_type"] == "CISO"]
+    leaderboard_sre = [x for x in leaderboard if x["agent_type"] == "SRE"]
 
-        sre = finops = ciso = "N/A"
-        if agent_type == "SRE":
-            sre = checkmarks
-        elif agent_type == "FinOps":
-            finops = checkmarks
-        elif agent_type == "CISO":
-            ciso = checkmarks
-        bench_line = [
-            rank,
-            name,
-            score,
-            sre,
-            finops,
-            ciso,
-            notes,
-        ]
-        prev_score = benchmark["score"]
-        bench_summary.append(bench_line)
+    overall_table = build_overall_table(leaderboard)
+    with open(args.out_overall, "w") as f:
+        f.write(overall_table)
 
-
-    print_table(bench_summary)
+    ciso_table = build_ciso_table(leaderboard_ciso)
+    with open(args.out_ciso, "w") as f:
+        f.write(ciso_table)

@@ -22,8 +22,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
+
       - name: Pull Leaderboard data
-        id: get-leaderboard-data
         env:
           ITBENCH_API: ${{vars.ITBENCH_API}}
           ITBENCH_API_TOKEN: ${{ secrets.ITBENCH_API_TOKEN }}
@@ -34,42 +34,28 @@ jobs:
           echo "Requesting Leaderboard data from API"
 
           if [ "$USE_SAMPLE" == "true" ]; then
-            python ./.github/workflows/leaderboard.py global --sample -b $BENCHMARK_ID -u $GITHUB_USERNAME >> leaderboard_raw.md
+            python ./.github/workflows/leaderboard.py global --sample -b $BENCHMARK_ID -u $GITHUB_USERNAME --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md
           else
-            python ./.github/workflows/leaderboard.py global >> leaderboard_raw.md
+            python ./.github/workflows/leaderboard.py global --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md
           fi
          
-      - name: generate-readme
-        id: generate-readme
+      - name: Open PR
         env:
-          CONTENT: |
-            # IT Bench Leaderboard
-
-            ${{steps.get-leaderboard-data.outputs.leaderboard_md}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
-          dt=$(date '+%d/%m/%Y %H:%M:%S');
+          git checkout -b leaderboard
 
-          echo "## 📊 IT Bench Leaderboard" > LEADERBOARD.md
-          echo -e "\n\nUpdated on: $dt \n\n" >> LEADERBOARD.md
-          cat leaderboard_raw.md >> LEADERBOARD.md
-          rm leaderboard_raw.md
-         
+          git add LEADERBOARD.md LEADERBOARD_CISO.md
 
-          git checkout main
+          git commit -m "chore: update leaderboard data"
 
-          git add LEADERBOARD.md
+          git push origin leaderboard -f
 
-          git commit -m "Update leaderboard"
-
-          git push origin main
-
-
-          
-
-
-
-      
-      
+          gh pr create \
+            --base main \
+            --head leaderboard \
+            --title "chore: update leaderboard data" \
+            --body "This PR updates the leaderboard automatically via GitHub Actions."
