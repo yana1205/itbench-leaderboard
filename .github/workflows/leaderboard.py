@@ -9,7 +9,7 @@ from typing import Optional
 
 ITBENCH_API = os.getenv("ITBENCH_API")
 ITBENCH_API_TOKEN = os.getenv("ITBENCH_API_TOKEN")
-
+GH_REPO = os.getenv("GH_REPO")
 
 def get_leaderboard(benchmark_id: str = None, github_username: str = None):
     url = f"{ITBENCH_API}/gitops/aggregate-results"
@@ -65,10 +65,12 @@ def build_overall_table(leaderboard):
         if benchmark["score"] != prev_score:
             rank = count
         name = benchmark["agent"]
+        github_username_link = benchmark["github_username_link"]
         score = f'{int(benchmark["score"] * 100)}%'
         agent_type = benchmark["agent_type"]
         checkmarks = "✅" * benchmark["num_of_passed"] if benchmark["num_of_passed"] >= 0 else "N/A"
         notes = f'Related to {benchmark["incident_type"]} scenarios'
+        issue_link = benchmark["issue_link"]
 
         sre = finops = ciso = "N/A"
         if agent_type == "SRE":
@@ -80,17 +82,19 @@ def build_overall_table(leaderboard):
         bench_line = [
             rank,
             name,
+            github_username_link,
             score,
             sre,
             finops,
             ciso,
+            issue_link,
             notes,
         ]
         prev_score = benchmark["score"]
         bench_summary.append(bench_line)
 
-    header_str = ['Rank', 'Agent Name', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Notes']
-    line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
+    header_str = ['Rank', 'Agent Name', 'Username', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Issue Link', 'Notes']
+    line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
     headers = line_fmt.format(*header_str)
     header_len = len(headers)
 
@@ -109,7 +113,7 @@ def build_overall_table(leaderboard):
 def build_ciso_table(leaderboard) -> str:
     column_mapping = {
         "id": "Benchmark (ID)",
-        "name": "Name",
+        "github_username_link": "Username",
         "name_decorated": "Benchmark (Name)",
         "agent": "Agent (Name)",
         "incident_type": "Scenario Category",
@@ -117,9 +121,10 @@ def build_ciso_table(leaderboard) -> str:
         "resolved": "% Resolved",
         "mttr": "Mean Processing Time (sec)",
         "num_of_passed": "Number of passed",
+        "issue_link": "Issue Link",
         "date": "Date (UTC)",
     }
-    columns = ["name", "agent", "incident_type", "score", "num_of_passed", "mttr", "date", "id"]
+    columns = ["agent", "github_username_link", "incident_type", "score", "num_of_passed", "mttr", "date", "issue_link"]
     headers = [column_mapping[col] for col in columns]
 
     texts = []
@@ -141,7 +146,6 @@ def build_ciso_table(leaderboard) -> str:
             values.append(str(val))
         texts.append("| " + " | ".join(values) + " |")
     return "\n".join(texts)
-
 
 SAMPLE_DATA = [
     {
@@ -204,6 +208,7 @@ if __name__ == "__main__":
     parser.add_argument("leaderboard")
     parser.add_argument("-u", "--github_username", type=str)
     parser.add_argument("-b", "--benchmark_id", type=str)
+    parser.add_argument("--issues", type=str, required=True)
     parser.add_argument("--out-ciso", type=str, required=True)
     parser.add_argument("--out-overall", type=str, required=True)
     parser.add_argument("--sample", action="store_true", help="Use sample data")
@@ -218,6 +223,16 @@ if __name__ == "__main__":
             leaderboard = get_leaderboard()
         else:
             leaderboard = get_leaderboard(args.benchmark_id, args.github_username)
+
+    with open(args.issues, "r") as f:
+        issues = json.load(f)
+
+    benchmark_issue_mapping = {issue["benchmark_id"]: issue["number"] for issue in issues}
+    for item in leaderboard:
+        number = benchmark_issue_mapping.get(item["id"])
+        item["issue_link"] = f"[#{number}](https://github.com/{GH_REPO}/issues/{number})" if number else "Not Found"
+        username = item.get("github_username")
+        item["github_username_link"] = f"[{username}](https://github.com/{username})" if username else "N/A"
 
     leaderboard = sorted(leaderboard, key=lambda x: x['score'], reverse=True)
     leaderboard_ciso = [x for x in leaderboard if x["agent_type"] == "CISO"]
