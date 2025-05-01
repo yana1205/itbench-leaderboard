@@ -23,20 +23,33 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
+      - name: List Issues of Finished Benchmark
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh issue list --label "benchmark" --state "closed" --json number,author,comments > issues.json
+          jq -c '[.[].number]' issues.json
+
       - name: Pull Leaderboard data
         env:
           ITBENCH_API: ${{vars.ITBENCH_API}}
           ITBENCH_API_TOKEN: ${{ secrets.ITBENCH_API_TOKEN }}
+          GH_REPO: ${{ github.repository }}
           USE_SAMPLE: ${{ github.event.inputs.use-sample }}
           BENCHMARK_ID: ${{ github.event.inputs.benchmark-id }}
           GITHUB_USERNAME: ${{ github.event.inputs.github-username }}
         run: |
+
+          echo "Parse gh issues"
+          python ./.github/workflows/update_benchmark_helper.py parse -i issues.json -o updated_issues.json
+
           echo "Requesting Leaderboard data from API"
 
           if [ "$USE_SAMPLE" == "true" ]; then
-            python ./.github/workflows/leaderboard.py global --sample -b $BENCHMARK_ID -u $GITHUB_USERNAME --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md
+            python ./.github/workflows/leaderboard.py global --sample -b $BENCHMARK_ID -u $GITHUB_USERNAME --issues updated_issues.json --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md
           else
-            python ./.github/workflows/leaderboard.py global --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md
+            python ./.github/workflows/leaderboard.py global --issues updated_issues.json --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md
           fi
          
       - name: Open PR
