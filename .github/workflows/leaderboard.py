@@ -109,7 +109,6 @@ def build_overall_table(leaderboard):
 
     return "\n".join(texts)
 
-
 def build_ciso_table(leaderboard) -> str:
     column_mapping = {
         "id": "Benchmark (ID)",
@@ -141,6 +140,66 @@ def build_ciso_table(leaderboard) -> str:
                 val = parse_json_timedelta(val)
             elif col == "date":
                 val = get_timestamp(to_datetime(val))
+            elif isinstance(val, float):
+                val = f"{val:.2f}"
+            values.append(str(val))
+        texts.append("| " + " | ".join(values) + " |")
+    return "\n".join(texts)
+
+def get_nested_value(metric_name, content) -> dict:
+    metric_parent, metric = metric_name.split("__")
+    nested_dict = content[metric_parent][metric]
+    return json.dumps(nested_dict, default=lambda x: round(x, 2) if isinstance(x, float) else x)
+
+def build_sre_table(leaderboard) -> str:
+    column_mapping = {
+        "id": "Benchmark (ID)",
+        "github_username_link": "Username",
+        "name_decorated": "Benchmark (Name)",
+        "agent": "Agent (Name)",
+        "incident_type": "Scenario Category",
+        "trials": "Trials across incidents",
+        "percent_agent_submitted_diagnosis_results": "Diagnosis received - % of Trials"
+        "diagnosis__ntam_fault_localization": "Diagnosis - NTAM Fault Localization",
+        "diagnosis__ntam_fault_propagation": "Diagnosis - NTAM Fault Propagation",
+        "diagnosis__time_to_diagnosis": "Diagnosis - NTAM Fault Localization",
+        "diagnosis__duration_agent_tried_for_diagnosis": "Diagnosis - Duration agent tried for Diagnosis",
+        "repair__time_to_repair": "Repair - Time to Repair",
+        "resolved": "% Resolved",
+        "issue_link": "Issue Link",
+        "date": "Date (UTC)",
+    }
+    columns = ["agent", "github_username_link",
+               "incident_type", "score",
+               "diagnosis__ntam_fault_localization",
+               "diagnosis__ntam_fault_propagation",
+               "diagnosis__time_to_diagnosis",
+               "diagnosis__duration_agent_tried_for_diagnosis",
+               "repair__time_to_repair",
+               "resolved",
+               "date", "issue_link"]
+    headers = [column_mapping[col] for col in columns]
+
+    texts = []
+    texts.append("## 📊 IT Bench Leaderboard (SRE)")
+    texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
+    texts.append("| " + " | ".join(headers) + " |")
+    texts.append("|" + "|".join(["-" * (len(h) + 2) for h in headers]) + "|")
+
+    for row in leaderboard:
+        values = []
+        for col in columns:
+            val = row.get(col, "")
+            if col == "mttr":
+                val = parse_json_timedelta(val)
+            elif col == "date":
+                val = get_timestamp(to_datetime(val))
+            elif (col == "diagnosis__ntam_fault_localization" or
+                  col == "diagnosis__ntam_fault_propagation" or
+                  col == "diagnosis__time_to_diagnosis" or
+                  col == "diagnosis__duration_agent_tried_for_diagnosis" or
+                  col == "repair__time_to_repair"):
+                val = get_nested_value(col, row)
             elif isinstance(val, float):
                 val = f"{val:.2f}"
             values.append(str(val))
@@ -209,7 +268,8 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--github_username", type=str)
     parser.add_argument("-b", "--benchmark_id", type=str)
     parser.add_argument("--issues", type=str, required=True)
-    parser.add_argument("--out-ciso", type=str, required=True)
+    parser.add_argument("--out-ciso", type=str, required=False)
+    parser.add_argument("--out-sre", type=str, required=False)
     parser.add_argument("--out-overall", type=str, required=True)
     parser.add_argument("--sample", action="store_true", help="Use sample data")
     args = parser.parse_args()
@@ -245,3 +305,7 @@ if __name__ == "__main__":
     ciso_table = build_ciso_table(leaderboard_ciso)
     with open(args.out_ciso, "w") as f:
         f.write(ciso_table)
+
+    sre_table = build_sre_table(leaderboard_sre)
+    with open(args.out_sre, "w") as f:
+        f.write(sre_table)
