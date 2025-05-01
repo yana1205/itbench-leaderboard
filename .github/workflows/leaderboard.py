@@ -4,12 +4,14 @@ import os
 import re
 import urllib.request
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode
 from typing import Optional
+from urllib.parse import urlencode
 
 ITBENCH_API = os.getenv("ITBENCH_API")
 ITBENCH_API_TOKEN = os.getenv("ITBENCH_API_TOKEN")
 GH_REPO = os.getenv("GH_REPO")
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "10"))
+
 
 def get_leaderboard(benchmark_id: str = None, github_username: str = None):
     url = f"{ITBENCH_API}/gitops/aggregate-results"
@@ -22,7 +24,7 @@ def get_leaderboard(benchmark_id: str = None, github_username: str = None):
         url += "?" + urlencode(query_params)
     headers = {"Authorization": f"Bearer {ITBENCH_API_TOKEN}"}
     req = urllib.request.Request(url=url, headers=headers, method="GET")
-    res = urllib.request.urlopen(req, timeout=10)
+    res = urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT)
 
     if res.getcode() != 200:
         print(f"Error requesting leaderboard JSON: {res.status_code}. {res.content}")
@@ -52,8 +54,10 @@ def get_timestamp(dt: Optional[datetime] = None) -> str:
         dt = datetime.now(timezone.utc)
     return dt.strftime("%d/%m/%Y %H:%M:%S")
 
+
 def to_datetime(timestamp: str) -> datetime:
     return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+
 
 def build_overall_table(leaderboard):
     bench_summary = []
@@ -169,6 +173,23 @@ For details on how to participate or interpret results, see the [README](../main
         texts.append("| " + " | ".join(values) + " |")
     return "\n".join(texts)
 
+
+def build_sre_table(leaderboard) -> str:
+    texts = []
+    texts.append("## 📊 IT Bench Leaderboard (SRE)")
+    header = """\
+This leaderboard shows the performance of agents on SRE-related IT automation scenarios.  
+For details on how to participate or interpret results, see the [README](../main/README.md).
+
+**Column Descriptions:**
+TBD
+"""
+    texts.append(header)
+    texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
+    texts.append("TBD")
+    return "\n".join(texts)
+
+
 SAMPLE_DATA = [
     {
         'name': 'Run-2',
@@ -232,6 +253,7 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--benchmark_id", type=str)
     parser.add_argument("--issues", type=str, required=True)
     parser.add_argument("--out-ciso", type=str, required=True)
+    parser.add_argument("--out-sre", type=str, required=True)
     parser.add_argument("--out-overall", type=str, required=True)
     parser.add_argument("--sample", action="store_true", help="Use sample data")
     args = parser.parse_args()
@@ -255,8 +277,13 @@ if __name__ == "__main__":
         item["issue_link"] = f"[#{number}](https://github.com/{GH_REPO}/issues/{number})" if number else "Not Found"
         username = item.get("github_username")
         item["github_username_link"] = f"[{username}](https://github.com/{username})" if username else "N/A"
+        # temporal solution for SRE metrics
+        if "score" not in item:
+            item["score"] = item.get("percent_agent_submitted_diagnosis_results", 0.0) / 100
+        if "num_of_passed" not in item:
+            item["num_of_passed"] = int(item["score"] * 10)  # treate number of pass as decile of score
 
-    leaderboard = sorted(leaderboard, key=lambda x: x['score'], reverse=True)
+    leaderboard = sorted(leaderboard, key=lambda x: x["score"], reverse=True)
     leaderboard_ciso = [x for x in leaderboard if x["agent_type"] == "CISO"]
     leaderboard_sre = [x for x in leaderboard if x["agent_type"] == "SRE"]
 
@@ -267,3 +294,7 @@ if __name__ == "__main__":
     ciso_table = build_ciso_table(leaderboard_ciso)
     with open(args.out_ciso, "w") as f:
         f.write(ciso_table)
+
+    sre_table = build_sre_table(leaderboard_sre)
+    with open(args.out_sre, "w") as f:
+        f.write(sre_table)
