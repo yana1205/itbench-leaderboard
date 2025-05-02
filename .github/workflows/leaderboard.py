@@ -70,6 +70,7 @@ def build_overall_table(leaderboard):
             rank = count
         name = benchmark["agent"]
         github_username_link = benchmark["github_username_link"]
+        github_username_org = benchmark["github_username_org"]
         score = f'{int(benchmark["score"] * 100)}%'
         agent_type = benchmark["agent_type"]
         checkmarks = "✅" * benchmark["num_of_passed"] if benchmark["num_of_passed"] >= 0 else "N/A"
@@ -87,6 +88,7 @@ def build_overall_table(leaderboard):
             rank,
             name,
             github_username_link,
+            github_username_org,
             score,
             sre,
             finops,
@@ -97,8 +99,8 @@ def build_overall_table(leaderboard):
         prev_score = benchmark["score"]
         bench_summary.append(bench_line)
 
-    header_str = ['Rank', 'Agent Name', 'Agent SUbmitter', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Issue Link', 'Notes']
-    line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
+    header_str = ['Rank', 'Agent Name', 'Agent Submitter', 'Organization', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Issue Link', 'Notes']
+    line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
     headers = line_fmt.format(*header_str)
     header_len = len(headers)
 
@@ -128,6 +130,7 @@ def build_ciso_table(leaderboard) -> str:
     column_mapping = {
         "id": "Benchmark (ID)",
         "github_username_link": "Agent Submitter",
+        "github_username_org": "Organization",
         "name_decorated": "Benchmark (Name)",
         "agent": "Agent (Name)",
         "incident_type": "Scenario Category",
@@ -138,7 +141,7 @@ def build_ciso_table(leaderboard) -> str:
         "issue_link": "Issue Link",
         "date": "Date (UTC)",
     }
-    columns = ["agent", "github_username_link", "incident_type", "score", "num_of_passed", "mttr", "date", "issue_link"]
+    columns = ["agent", "github_username_link", "github_username_org", "incident_type", "score", "num_of_passed", "mttr", "date", "issue_link"]
     headers = [column_mapping[col] for col in columns]
 
     texts = []
@@ -184,6 +187,7 @@ def build_sre_table(leaderboard) -> str:
     column_mapping = {
         "id": "Benchmark (ID)",
         "github_username_link": "Agent Submitter",
+        "github_username_org": "Organization",
         "name_decorated": "Benchmark (Name)",
         "agent": "Agent (Name)",
         "incident_type": "Scenario Category",
@@ -198,7 +202,7 @@ def build_sre_table(leaderboard) -> str:
         "issue_link": "Issue Link",
         "date": "Date (UTC)",
     }
-    columns = ["agent", "github_username_link",
+    columns = ["agent", "github_username_link", "github_username_org",
                "incident_type", "trials",
                "diagnosis__ntam_fault_localization",
                "diagnosis__ntam_fault_propagation",
@@ -327,9 +331,9 @@ if __name__ == "__main__":
         number = benchmark_issue_mapping.get(item["id"])
         item["issue_link"] = f"[#{number}](https://github.com/{GH_REPO}/issues/{number})" if number else "Not Found"
         username = item.get("github_username")
+        item["github_username_link"] = f"[{username}](https://github.com/{username})" if username else "N/A"
         company = users.get(username, {}).get("company")
-        company = f"<br>({company})" if company else ""
-        item["github_username_link"] = f"[{username}{company}](https://github.com/{username})" if username else "N/A"
+        item["github_username_org"] = company if company else ""
         # temporal solution for SRE metrics
         if "score" not in item:
             item["score"] = item.get("percent_agent_submitted_diagnosis_results", 0.0) / 100
