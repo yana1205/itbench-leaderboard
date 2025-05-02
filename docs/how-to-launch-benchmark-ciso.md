@@ -19,25 +19,27 @@ If you would like to benchmark using the [official CISO CAA Agent](https://githu
     If you want to use other models, refer to [this section](https://github.com/IBM/itbench-ciso-caa-agent?tab=readme-ov-file#3-create-env-file-and-set-llm-api-credentials)
 
 1. Run CISO Agent Harness Docker container
-    Run the container, replacing `<ABSOLUTE_PATH/TO/AGENT_MANIFEST>` and `<ABSOLUTE_PATH/TO/ENVFILE>` replaced with your own paths:
+    Run the container, replacing `<ABSOLUTE_PATH/TO/AGENT_MANIFEST>` and `<ABSOLUTE_PATH/TO/ENVFILE>` replaced with your own paths.
     ```
     docker run --rm -it --name ciso-agent-harness \
         --mount type=bind,src=<ABSOLUTE_PATH/TO/AGENT_MANIFEST>,dst=/tmp/agent-manifest.json \
         --mount type=bind,src=<ABSOLUTE_PATH/TO/ENVFILE>,dst=/etc/ciso-agent/.env \
-        icr.io/agent-bench/ciso-agent-harness:0.0.5 \
-        --host itbench.apps.staging2.itbench.res.ibm.com \
+        quay.io/it-bench/ciso-agent-harness:latest \
+        --host itbench.apps.prod.itbench.res.ibm.com \
         --benchmark_timeout 3600
     ```
     <img width="614" alt="image" src="https://github.com/user-attachments/assets/a41eaa4d-9770-4637-88ed-3c487893a2e1">
 
 1. Run the CISO DEF Runner Docker Container
-    Open a new terminal window and run the container, replacing `<ABSOLUTE_PATH/TO/AGENT_MANIFEST>` and `<ABSOLUTE_PATH/TO/KUBECONFIG_FILE>` replaced with your own paths:
+    Open a new terminal window and run the container, replacing `<ABSOLUTE_PATH/TO/AGENT_MANIFEST>` and `<ABSOLUTE_PATH/TO/KUBECONFIG_FILE>` replaced with your own paths.
+    
+    (If you are benchmarking a RHEL scenario, please refer to [the full specification.](#full-specification-of-bench-runner))
     ```
     docker run --rm -it --name ciso-bench-runner \
         --mount type=bind,src=<ABSOLUTE_PATH/TO/AGENT_MANIFEST>,dst=/tmp/agent-manifest.json \
         --mount type=bind,src=<ABSOLUTE_PATH/TO/KUBECONFIG_FILE>,dst=/tmp/kubeconfig.yaml \
-        icr.io/agent-bench/ciso-bench-runner:0.0.11 \
-        --host itbench.apps.staging2.itbench.res.ibm.com \
+        quay.io/it-bench/ciso-bench-runner:latest \
+        --host itbench.apps.prod.itbench.res.ibm.com \
         --runner_id my-ciso-runner-1
     ```
     <img width="614" alt="image" src="https://github.com/user-attachments/assets/8dc70982-2219-4bd5-ae85-5845e07818cd">
@@ -251,4 +253,20 @@ Example Comment:
 @yana, @rohanarora
 Hi, I have not received a response regarding my registration request.
 Adding the "need help" label for visibility.
+```
+
+## Misc
+
+#### Full Specification of Bench Runner
+
+```
+docker run --rm -it --name ciso-bench-runner \
+    --mount type=bind,src=<ABSOLUTE_PATH/TO/AGENT_MANIFEST>,dst=/tmp/agent-manifest.json \
+    --mount type=bind,src=<ABSOLUTE_PATH/TO/KUBECONFIG_FILE>,dst=/tmp/kubeconfig.yaml \
+    --mount type=bind,src=<PATH/TO/RHEL_MACHINE_SSHKEY>,dst=/tmp/rhel-bundle-config/ssh_key \
+    quay.io/it-bench/ciso-bench-runner:latest \
+    --host itbench.apps.prod.itbench.res.ibm.com \
+    --runner_id my-ciso-runner-1 \
+    --rhel_address <IP Address or Hostname of the RHEL9 machine used for RHEL Scenario> \
+    --rhel_username <Username of the RHEL9 machine used for RHEL Scenario>
 ```
