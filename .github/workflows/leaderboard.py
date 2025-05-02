@@ -149,7 +149,10 @@ def build_ciso_table(leaderboard) -> str:
 def get_nested_value(metric_name, content) -> dict:
     metric_parent, metric = metric_name.split("__")
     nested_dict = content[metric_parent][metric]
-    return json.dumps(nested_dict, default=lambda x: round(x, 2) if isinstance(x, float) else x)
+
+    formatted_dict = {k: (lambda v: f"{v:.2f}" if isinstance(v, float) else v)(val)
+                     for k, val in nested_dict.items()}
+    return json.dumps(formatted_dict)
 
 def build_sre_table(leaderboard) -> str:
     column_mapping = {
@@ -165,18 +168,18 @@ def build_sre_table(leaderboard) -> str:
         "diagnosis__time_to_diagnosis": "Diagnosis - NTAM Fault Localization",
         "diagnosis__duration_agent_tried_for_diagnosis": "Diagnosis - Duration agent tried for Diagnosis",
         "repair__time_to_repair": "Repair - Time to Repair",
-        "resolved": "% Resolved",
+        "percent_resolved": "% Resolved",
         "issue_link": "Issue Link",
         "date": "Date (UTC)",
     }
     columns = ["agent", "github_username_link",
-               "incident_type", "score",
+               "incident_type", "trials",
                "diagnosis__ntam_fault_localization",
                "diagnosis__ntam_fault_propagation",
                "diagnosis__time_to_diagnosis",
                "diagnosis__duration_agent_tried_for_diagnosis",
                "repair__time_to_repair",
-               "resolved",
+               "percent_resolved",
                "date", "issue_link"]
     headers = [column_mapping[col] for col in columns]
 
