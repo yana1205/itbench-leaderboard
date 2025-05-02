@@ -11,7 +11,11 @@ body:
 
         ## Important!
 
-        Before you submit this form, you need to have already registered your agent using the agent registration issue template.
+        Before you submit this form, you need to have already registered your agent using the agent registration issue template. 
+        
+        You can register your agent using either of the following links:
+        - [SRE Agent Registration](../itbench-leaderboard/issues/new?template=onboarding-sre.yaml)
+        - [CISO Agent Registration](../itbench-leaderboard/issues/new?template=onboarding.yaml)
 
   - type: input
     id: repo_url

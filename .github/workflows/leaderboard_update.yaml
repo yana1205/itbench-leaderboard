@@ -30,6 +30,21 @@ jobs:
         run: |
           gh issue list --label "benchmark" --state "closed" --json number,author,comments > issues.json
           jq -c '[.[].number]' issues.json
+          
+          usernames=($(jq -r '.[].author.login' issues.json | sort -u))
+          query='{'$'\n'
+          for i in "${!usernames[@]}"; do
+            login="${usernames[$i]}"
+            query+="  u$((i+1)): user(login: \"${login}\") { login company }"$'\n'
+          done
+          query+='}'
+
+          gh api graphql -f query="$query" | jq -r '
+            .data | 
+            to_entries | 
+            map({ key: .value.login, value: { company: .value.company } }) | 
+            from_entries
+          ' > users.json
 
       - name: Pull Leaderboard data
         env:
@@ -47,9 +62,9 @@ jobs:
           echo "Requesting Leaderboard data from API"
 
           if [ "$USE_SAMPLE" == "true" ]; then
-            python ./.github/workflows/leaderboard.py global --sample -b $BENCHMARK_ID -u $GITHUB_USERNAME --issues updated_issues.json --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md
+            python ./.github/workflows/leaderboard.py global --sample -b $BENCHMARK_ID -u $GITHUB_USERNAME --issues updated_issues.json --users users.json --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md --out-sre LEADERBOARD_SRE.md
           else
-            python ./.github/workflows/leaderboard.py global --issues updated_issues.json --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md
+            python ./.github/workflows/leaderboard.py global --issues updated_issues.json --users users.json --out-overall LEADERBOARD.md --out-ciso LEADERBOARD_CISO.md --out-sre LEADERBOARD_SRE.md
           fi
          
       - name: Open PR
@@ -61,7 +76,7 @@ jobs:
 
           git checkout -b leaderboard
 
-          git add LEADERBOARD.md LEADERBOARD_CISO.md
+          git add LEADERBOARD.md LEADERBOARD_CISO.md LEADERBOARD_SRE.md
 
           git commit -m "chore: update leaderboard data"
 

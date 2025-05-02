@@ -4,12 +4,14 @@ import os
 import re
 import urllib.request
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode
 from typing import Optional
+from urllib.parse import urlencode
 
 ITBENCH_API = os.getenv("ITBENCH_API")
 ITBENCH_API_TOKEN = os.getenv("ITBENCH_API_TOKEN")
 GH_REPO = os.getenv("GH_REPO")
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "10"))
+
 
 def get_leaderboard(benchmark_id: str = None, github_username: str = None):
     url = f"{ITBENCH_API}/gitops/aggregate-results"
@@ -22,7 +24,7 @@ def get_leaderboard(benchmark_id: str = None, github_username: str = None):
         url += "?" + urlencode(query_params)
     headers = {"Authorization": f"Bearer {ITBENCH_API_TOKEN}"}
     req = urllib.request.Request(url=url, headers=headers, method="GET")
-    res = urllib.request.urlopen(req, timeout=10)
+    res = urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT)
 
     if res.getcode() != 200:
         print(f"Error requesting leaderboard JSON: {res.status_code}. {res.content}")
@@ -52,8 +54,10 @@ def get_timestamp(dt: Optional[datetime] = None) -> str:
         dt = datetime.now(timezone.utc)
     return dt.strftime("%d/%m/%Y %H:%M:%S")
 
+
 def to_datetime(timestamp: str) -> datetime:
     return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+
 
 def build_overall_table(leaderboard):
     bench_summary = []
@@ -66,6 +70,7 @@ def build_overall_table(leaderboard):
             rank = count
         name = benchmark["agent"]
         github_username_link = benchmark["github_username_link"]
+        github_username_org = benchmark["github_username_org"]
         score = f'{int(benchmark["score"] * 100)}%'
         agent_type = benchmark["agent_type"]
         checkmarks = "✅" * benchmark["num_of_passed"] if benchmark["num_of_passed"] >= 0 else "N/A"
@@ -83,6 +88,7 @@ def build_overall_table(leaderboard):
             rank,
             name,
             github_username_link,
+            github_username_org,
             score,
             sre,
             finops,
@@ -93,13 +99,24 @@ def build_overall_table(leaderboard):
         prev_score = benchmark["score"]
         bench_summary.append(bench_line)
 
-    header_str = ['Rank', 'Agent Name', 'Username', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Issue Link', 'Notes']
-    line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
+    header_str = ['Rank', 'Agent Name', 'Agent Submitter', 'Organization', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Issue Link', 'Notes']
+    line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
     headers = line_fmt.format(*header_str)
     header_len = len(headers)
 
     texts = []
     texts.append("## 📊 IT Bench Leaderboard")
+    header = """\
+This table shows a consolidated view of all agent submissions across different domains (SRE, FinOps, CISO).
+
+For details on how to participate, see the [README](../README.md).
+
+**Column Descriptions:**
+- *Overall Score*: Combined performance across available domains
+- *SRE / FinOps / CISO*: ✅ if benchmarks in that domain were completed
+- *Notes*: Additional context on the evaluated scenarios
+"""
+    texts.append(header)
     texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
     texts.append("-" * header_len)
     texts.append(headers)
@@ -109,11 +126,11 @@ def build_overall_table(leaderboard):
 
     return "\n".join(texts)
 
-
 def build_ciso_table(leaderboard) -> str:
     column_mapping = {
         "id": "Benchmark (ID)",
-        "github_username_link": "Username",
+        "github_username_link": "Agent Submitter",
+        "github_username_org": "Organization",
         "name_decorated": "Benchmark (Name)",
         "agent": "Agent (Name)",
         "incident_type": "Scenario Category",
@@ -124,11 +141,22 @@ def build_ciso_table(leaderboard) -> str:
         "issue_link": "Issue Link",
         "date": "Date (UTC)",
     }
-    columns = ["agent", "github_username_link", "incident_type", "score", "num_of_passed", "mttr", "date", "issue_link"]
+    columns = ["agent", "github_username_link", "github_username_org", "incident_type", "score", "num_of_passed", "mttr", "date", "issue_link"]
     headers = [column_mapping[col] for col in columns]
 
     texts = []
     texts.append("## 📊 IT Bench Leaderboard (CISO)")
+    header = """\
+This leaderboard shows the performance of agents on CISO-related IT automation scenarios.  
+For details on how to participate or interpret results, see the [README](../main/README.md).
+
+**Column Descriptions:**
+- *Score*: Average benchmark score across scenarios (1.0 = perfect)
+- *Number of passed*: Number of scenarios successfully passed
+- *Mean Processing Time (sec)*: Average time taken across scenarios
+- *Scenario Category*: Categories of evaluated tasks (e.g., RHEL, Kyverno, etc.)
+"""
+    texts.append(header)
     texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
     texts.append("| " + " | ".join(headers) + " |")
     texts.append("|" + "|".join(["-" * (len(h) + 2) for h in headers]) + "|")
@@ -141,6 +169,72 @@ def build_ciso_table(leaderboard) -> str:
                 val = parse_json_timedelta(val)
             elif col == "date":
                 val = get_timestamp(to_datetime(val))
+            elif isinstance(val, float):
+                val = f"{val:.2f}"
+            values.append(str(val))
+        texts.append("| " + " | ".join(values) + " |")
+    return "\n".join(texts)
+
+def get_nested_value(metric_name, content) -> dict:
+    metric_parent, metric = metric_name.split("__")
+    nested_dict = content[metric_parent][metric]
+
+    formatted_dict = {k: (lambda v: f"{v:.2f}" if isinstance(v, float) else v)(val)
+                     for k, val in nested_dict.items()}
+    return json.dumps(formatted_dict)
+
+def build_sre_table(leaderboard) -> str:
+    column_mapping = {
+        "id": "Benchmark (ID)",
+        "github_username_link": "Agent Submitter",
+        "github_username_org": "Organization",
+        "name_decorated": "Benchmark (Name)",
+        "agent": "Agent (Name)",
+        "incident_type": "Scenario Category",
+        "trials": "Trials across incidents",
+        "percent_agent_submitted_diagnosis_results": "Diagnosis received - % of Trials",
+        "diagnosis__ntam_fault_localization": "Diagnosis - NTAM Fault Localization",
+        "diagnosis__ntam_fault_propagation": "Diagnosis - NTAM Fault Propagation",
+        "diagnosis__time_to_diagnosis": "Diagnosis - NTAM Fault Localization",
+        "diagnosis__duration_agent_tried_for_diagnosis": "Diagnosis - Duration agent tried for Diagnosis",
+        "repair__time_to_repair": "Repair - Time to Repair",
+        "percent_resolved": "% Resolved",
+        "issue_link": "Issue Link",
+        "date": "Date (UTC)",
+    }
+    columns = ["agent", "github_username_link", "github_username_org",
+               "incident_type", "trials",
+               "diagnosis__ntam_fault_localization",
+               "diagnosis__ntam_fault_propagation",
+               "diagnosis__time_to_diagnosis",
+               "diagnosis__duration_agent_tried_for_diagnosis",
+               "repair__time_to_repair",
+               "percent_resolved",
+               "date", "issue_link"]
+    headers = [column_mapping[col] for col in columns]
+
+    texts = []
+    texts.append("## 📊 IT Bench Leaderboard (SRE)")
+    texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
+    texts.append("| " + " | ".join(headers) + " |")
+    texts.append("|" + "|".join(["-" * (len(h) + 2) for h in headers]) + "|")
+
+    for row in leaderboard:
+        values = []
+        for col in columns:
+            val = row.get(col, "")
+            if col == "mttr":
+                val = parse_json_timedelta(val)
+            elif col == "date":
+                val = get_timestamp(to_datetime(val))
+            elif (col == "diagnosis__ntam_fault_localization" or
+                  col == "diagnosis__ntam_fault_propagation" or
+                  col == "diagnosis__time_to_diagnosis" or
+                  col == "diagnosis__duration_agent_tried_for_diagnosis" or
+                  col == "repair__time_to_repair"):
+                val = get_nested_value(col, row)
+            elif col == "percent_resolved":
+                val = row.get("repair", {}).get(col, 0.0)
             elif isinstance(val, float):
                 val = f"{val:.2f}"
             values.append(str(val))
@@ -209,7 +303,9 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--github_username", type=str)
     parser.add_argument("-b", "--benchmark_id", type=str)
     parser.add_argument("--issues", type=str, required=True)
+    parser.add_argument("--users", type=str, required=True)
     parser.add_argument("--out-ciso", type=str, required=True)
+    parser.add_argument("--out-sre", type=str, required=True)
     parser.add_argument("--out-overall", type=str, required=True)
     parser.add_argument("--sample", action="store_true", help="Use sample data")
     args = parser.parse_args()
@@ -227,14 +323,24 @@ if __name__ == "__main__":
     with open(args.issues, "r") as f:
         issues = json.load(f)
 
+    with open(args.users, "r") as f:
+        users = json.load(f)
+
     benchmark_issue_mapping = {issue["benchmark_id"]: issue["number"] for issue in issues}
     for item in leaderboard:
         number = benchmark_issue_mapping.get(item["id"])
         item["issue_link"] = f"[#{number}](https://github.com/{GH_REPO}/issues/{number})" if number else "Not Found"
         username = item.get("github_username")
         item["github_username_link"] = f"[{username}](https://github.com/{username})" if username else "N/A"
+        company = users.get(username, {}).get("company")
+        item["github_username_org"] = company if company else ""
+        # temporal solution for SRE metrics
+        if "score" not in item:
+            item["score"] = item.get("percent_agent_submitted_diagnosis_results", 0.0) / 100
+        if "num_of_passed" not in item:
+            item["num_of_passed"] = int(item["score"] * 10)  # treate number of pass as decile of score
 
-    leaderboard = sorted(leaderboard, key=lambda x: x['score'], reverse=True)
+    leaderboard = sorted(leaderboard, key=lambda x: x["score"], reverse=True)
     leaderboard_ciso = [x for x in leaderboard if x["agent_type"] == "CISO"]
     leaderboard_sre = [x for x in leaderboard if x["agent_type"] == "SRE"]
 
@@ -245,3 +351,7 @@ if __name__ == "__main__":
     ciso_table = build_ciso_table(leaderboard_ciso)
     with open(args.out_ciso, "w") as f:
         f.write(ciso_table)
+
+    sre_table = build_sre_table(leaderboard_sre)
+    with open(args.out_sre, "w") as f:
+        f.write(sre_table)
