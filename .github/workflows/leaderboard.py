@@ -97,7 +97,7 @@ def build_overall_table(leaderboard):
         prev_score = benchmark["score"]
         bench_summary.append(bench_line)
 
-    header_str = ['Rank', 'Agent Name', 'Username', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Issue Link', 'Notes']
+    header_str = ['Rank', 'Agent Name', 'Agent SUbmitter', 'Overall Score', 'SRE', 'FinOps', 'CISO', 'Issue Link', 'Notes']
     line_fmt = '| {:^4} | {:^20} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:^13} | {:<30} |'
     headers = line_fmt.format(*header_str)
     header_len = len(headers)
@@ -127,7 +127,7 @@ For details on how to participate, see the [README](../README.md).
 def build_ciso_table(leaderboard) -> str:
     column_mapping = {
         "id": "Benchmark (ID)",
-        "github_username_link": "Username",
+        "github_username_link": "Agent Submitter",
         "name_decorated": "Benchmark (Name)",
         "agent": "Agent (Name)",
         "incident_type": "Scenario Category",
@@ -183,7 +183,7 @@ def get_nested_value(metric_name, content) -> dict:
 def build_sre_table(leaderboard) -> str:
     column_mapping = {
         "id": "Benchmark (ID)",
-        "github_username_link": "Username",
+        "github_username_link": "Agent Submitter",
         "name_decorated": "Benchmark (Name)",
         "agent": "Agent (Name)",
         "incident_type": "Scenario Category",
@@ -229,6 +229,8 @@ def build_sre_table(leaderboard) -> str:
                   col == "diagnosis__duration_agent_tried_for_diagnosis" or
                   col == "repair__time_to_repair"):
                 val = get_nested_value(col, row)
+            elif col == "percent_resolved":
+                val = row.get("repair", {}).get(col, 0.0)
             elif isinstance(val, float):
                 val = f"{val:.2f}"
             values.append(str(val))
@@ -297,6 +299,7 @@ if __name__ == "__main__":
     parser.add_argument("-u", "--github_username", type=str)
     parser.add_argument("-b", "--benchmark_id", type=str)
     parser.add_argument("--issues", type=str, required=True)
+    parser.add_argument("--users", type=str, required=True)
     parser.add_argument("--out-ciso", type=str, required=True)
     parser.add_argument("--out-sre", type=str, required=True)
     parser.add_argument("--out-overall", type=str, required=True)
@@ -316,12 +319,17 @@ if __name__ == "__main__":
     with open(args.issues, "r") as f:
         issues = json.load(f)
 
+    with open(args.users, "r") as f:
+        users = json.load(f)
+
     benchmark_issue_mapping = {issue["benchmark_id"]: issue["number"] for issue in issues}
     for item in leaderboard:
         number = benchmark_issue_mapping.get(item["id"])
         item["issue_link"] = f"[#{number}](https://github.com/{GH_REPO}/issues/{number})" if number else "Not Found"
         username = item.get("github_username")
-        item["github_username_link"] = f"[{username}](https://github.com/{username})" if username else "N/A"
+        company = users.get(username, {}).get("company")
+        company = f"<br>({company})" if company else ""
+        item["github_username_link"] = f"[{username}{company}](https://github.com/{username})" if username else "N/A"
         # temporal solution for SRE metrics
         if "score" not in item:
             item["score"] = item.get("percent_agent_submitted_diagnosis_results", 0.0) / 100
