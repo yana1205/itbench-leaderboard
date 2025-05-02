@@ -195,7 +195,7 @@ def build_sre_table(leaderboard) -> str:
         "percent_agent_submitted_diagnosis_results": "Diagnosis received - % of Trials",
         "diagnosis__ntam_fault_localization": "Diagnosis - NTAM Fault Localization",
         "diagnosis__ntam_fault_propagation": "Diagnosis - NTAM Fault Propagation",
-        "diagnosis__time_to_diagnosis": "Diagnosis - NTAM Fault Localization",
+        "diagnosis__time_to_diagnosis": "Diagnosis - Time to Diagnosis",
         "diagnosis__duration_agent_tried_for_diagnosis": "Diagnosis - Duration agent tried for Diagnosis",
         "repair__time_to_repair": "Repair - Time to Repair",
         "percent_resolved": "% Resolved",
