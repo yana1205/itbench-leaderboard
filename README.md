@@ -105,7 +105,7 @@ You can run either your own custom agent or one of our built-in agents against t
 
 The following guides and videos demonstrate how to run the benchmark using our built-in agents, and may also serve as helpful references when setting up your own agent:
   
-- **CISO Agent** – [Documentation](docs/how-to-launch-benchmark-ciso.md) ・ [Demo Video](<ciso-video-link>)
+- **CISO Agent** – [Documentation](docs/how-to-launch-benchmark-ciso.md) ・ [Demo Video](https://ibm.box.com/s/ob6zajbnexkq6gan4vuwgw632j1plcip)
 - **SRE Agent** – [Documentation](https://github.com/IBM/ITBench-SRE-Agent/blob/leaderboard_updates/Leaderboard.md) ・ [Demo Video](<sre-video-link>)
 
 ## ITBench Ecosystem and Related Repositories
