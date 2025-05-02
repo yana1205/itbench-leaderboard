@@ -124,7 +124,6 @@ For details on how to participate, see the [README](../README.md).
 
     return "\n".join(texts)
 
-
 def build_ciso_table(leaderboard) -> str:
     column_mapping = {
         "id": "Benchmark (ID)",
@@ -173,22 +172,68 @@ For details on how to participate or interpret results, see the [README](../main
         texts.append("| " + " | ".join(values) + " |")
     return "\n".join(texts)
 
+def get_nested_value(metric_name, content) -> dict:
+    metric_parent, metric = metric_name.split("__")
+    nested_dict = content[metric_parent][metric]
+
+    formatted_dict = {k: (lambda v: f"{v:.2f}" if isinstance(v, float) else v)(val)
+                     for k, val in nested_dict.items()}
+    return json.dumps(formatted_dict)
 
 def build_sre_table(leaderboard) -> str:
+    column_mapping = {
+        "id": "Benchmark (ID)",
+        "github_username_link": "Username",
+        "name_decorated": "Benchmark (Name)",
+        "agent": "Agent (Name)",
+        "incident_type": "Scenario Category",
+        "trials": "Trials across incidents",
+        "percent_agent_submitted_diagnosis_results": "Diagnosis received - % of Trials",
+        "diagnosis__ntam_fault_localization": "Diagnosis - NTAM Fault Localization",
+        "diagnosis__ntam_fault_propagation": "Diagnosis - NTAM Fault Propagation",
+        "diagnosis__time_to_diagnosis": "Diagnosis - NTAM Fault Localization",
+        "diagnosis__duration_agent_tried_for_diagnosis": "Diagnosis - Duration agent tried for Diagnosis",
+        "repair__time_to_repair": "Repair - Time to Repair",
+        "percent_resolved": "% Resolved",
+        "issue_link": "Issue Link",
+        "date": "Date (UTC)",
+    }
+    columns = ["agent", "github_username_link",
+               "incident_type", "trials",
+               "diagnosis__ntam_fault_localization",
+               "diagnosis__ntam_fault_propagation",
+               "diagnosis__time_to_diagnosis",
+               "diagnosis__duration_agent_tried_for_diagnosis",
+               "repair__time_to_repair",
+               "percent_resolved",
+               "date", "issue_link"]
+    headers = [column_mapping[col] for col in columns]
+
     texts = []
     texts.append("## 📊 IT Bench Leaderboard (SRE)")
-    header = """\
-This leaderboard shows the performance of agents on SRE-related IT automation scenarios.  
-For details on how to participate or interpret results, see the [README](../main/README.md).
-
-**Column Descriptions:**
-TBD
-"""
-    texts.append(header)
     texts.append(f"\n\nUpdated on: {get_timestamp()}\n\n")
-    texts.append("TBD")
-    return "\n".join(texts)
+    texts.append("| " + " | ".join(headers) + " |")
+    texts.append("|" + "|".join(["-" * (len(h) + 2) for h in headers]) + "|")
 
+    for row in leaderboard:
+        values = []
+        for col in columns:
+            val = row.get(col, "")
+            if col == "mttr":
+                val = parse_json_timedelta(val)
+            elif col == "date":
+                val = get_timestamp(to_datetime(val))
+            elif (col == "diagnosis__ntam_fault_localization" or
+                  col == "diagnosis__ntam_fault_propagation" or
+                  col == "diagnosis__time_to_diagnosis" or
+                  col == "diagnosis__duration_agent_tried_for_diagnosis" or
+                  col == "repair__time_to_repair"):
+                val = get_nested_value(col, row)
+            elif isinstance(val, float):
+                val = f"{val:.2f}"
+            values.append(str(val))
+        texts.append("| " + " | ".join(values) + " |")
+    return "\n".join(texts)
 
 SAMPLE_DATA = [
     {
